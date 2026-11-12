@@ -31,8 +31,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -x ci/run-jvm-unit-tests.sh ]; then
-            ./ci/run-jvm-unit-tests.sh
+          if [ -f ci/run-jvm-unit-tests.sh ]; then
+            bash ci/run-jvm-unit-tests.sh
           else
             echo "ci/run-jvm-unit-tests.sh missing"
             exit 1
@@ -127,15 +127,12 @@ jobs:
           heap-size: 512M
           script: |
             set -euo pipefail
-            chmod +x ./gradlew
+            chmod +x ./gradlew || true
             ./gradlew :app:connectedDebugAndroidTest \
               --no-daemon \
               --no-parallel \
               --max-workers=1 \
-              --stacktrace \
-              -Pandroid.testInstrumentationRunnerArguments.class=com.myplan.app.LocalBackupHelperInstrumentedTest,com.myplan.app.AdminBanGateInstrumentedTest \
-              || ./gradlew :app:connectedDebugAndroidTest \
-                --no-daemon --no-parallel --max-workers=1 --stacktrace
+              --stacktrace
 
       - name: Collect instrumented test results
         if: always()
@@ -143,7 +140,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/instrumented
-          find app/build/outputs -type f \( -name '*.xml' -o -name '*.html' -o -name '*.txt' \) 2>/dev/null | head -100 || true
           cp -r app/build/outputs/androidTest artifacts/instrumented/ 2>/dev/null || true
           cp -r app/build/reports artifacts/instrumented/reports 2>/dev/null || true
 
@@ -227,7 +223,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x ./gradlew
+          chmod +x ./gradlew || true
           ./gradlew :app:assembleDebug \
             --no-daemon \
             --no-parallel \
@@ -248,10 +244,6 @@ jobs:
           cp "$APK" artifacts/MyPlan-v2.41.3-debug.apk
           ls -lh artifacts/MyPlan-v2.41.3-debug.apk
           sha256sum artifacts/MyPlan-v2.41.3-debug.apk | tee artifacts/SHA256SUMS.txt
-          AAPT="$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | tail -n1 || true)"
-          if [ -n "$AAPT" ] && [ -x "$AAPT" ]; then
-            "$AAPT" dump badging artifacts/MyPlan-v2.41.3-debug.apk | grep -E "package:|sdkVersion:|targetSdkVersion:" || true
-          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
