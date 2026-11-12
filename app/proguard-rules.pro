@@ -1,0 +1,3 @@
+-keep class com.myplan.app.** { *; }
+-keep class com.tom_roush.** { *; }
+-dontwarn org.apache.pdfbox.**
